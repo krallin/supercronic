@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/aptible/supercronic/cron"
 	"github.com/aptible/supercronic/crontab"
+	"github.com/aptible/supercronic/log/hook"
 	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"sync"
@@ -21,6 +23,7 @@ var Usage = func() {
 func main() {
 	debug := flag.Bool("debug", false, "enable debug logging")
 	json := flag.Bool("json", false, "enable JSON logging")
+	splitStream := flag.Bool("split-stream", false, "split stream into stdout/stderr")
 	flag.Parse()
 
 	if *debug {
@@ -31,6 +34,12 @@ func main() {
 		logrus.SetFormatter(&logrus.JSONFormatter{})
 	} else {
 		logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
+	}
+
+	if *splitStream {
+		logrus.SetOutput(ioutil.Discard)
+		logrus.AddHook(&hook.SplitStderrStreamHook{})
+		logrus.AddHook(&hook.SplitStdoutStreamHook{})
 	}
 
 	if flag.NArg() != 1 {
